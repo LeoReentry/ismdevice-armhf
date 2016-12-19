@@ -20,7 +20,7 @@
 class Camera
 {
 public:
-	Camera(utility::string_t, utility::string_t, std::string);
+	Camera(const std::string&, utility::string_t, std::string);
 	~Camera();
 
 	void Start();
@@ -46,7 +46,7 @@ public: //public exposed  Publishers aka Events
 	CaptureNotificationPublisher NewCaptureUploaded;
 
 private:
-	void InitBlobStorage(utility::string_t storageConnectionString);
+	void InitBlobStorage(const std::string &storageConnectionString);
 	void InitPRU();
 	void InitCamera();
 	void HandleCaptures();

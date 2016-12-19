@@ -25,9 +25,9 @@ Device::Device()
 	unsigned char* jsonString;
 	int jsonLength;
 	// Decrypt device settings using TPM
-	DeviceCrypto_Decrypt((char*)"settings", &connections, &clen);
+	DeviceCrypto_Decrypt((char*)"settings", &jsonString, &jsonLength);
 	// Parse JSON
-	nlohmann::json settings = nlohmann::json::parse(connections);
+	nlohmann::json settings = nlohmann::json::parse(jsonString);
 	// Fill into string variables
 	std::string connectionString = settings["ConnectionString"];
 	std::string storage_connection_string = settings["StorageConnectionString"];
@@ -37,6 +37,7 @@ Device::Device()
 	_state = &Singleton<ReadyState>::Instance();
 	platform_init();
 	iotHubClientHandle = IoTHubClient_CreateFromConnectionString(connectionString.c_str(), AMQP_Protocol);
+	// Pass the connection string as const reference, because it will only be needed once for initialization but never again
 	camera = new Camera(storage_connection_string, container_name, storage_acc_name);
 	camera->GetCameraInfo();
 
@@ -44,7 +45,7 @@ Device::Device()
 								  0.0025, 8.5, 3.75, 4, 16, // double VarianceThreshold, double DistanceMapThreshold, double RGThreshold, double RestrictedFillingThreshold, double DilateValue
 								  camera->getGain(), camera->getExposure(), // int Gain, double Exposure
 								  4, 0, 1000); // int PulseWidth, int Current, int Predelay
-
+  std::cout << "WE FINISHED INIT" << "\n";
 	// Overwrite strings with 0 in memory since we don't know when the RAM is gonna be used by something else
 	memset((void*)connectionString.data(), 0, connectionString.size());
 	memset((void*)storage_connection_string.data(), 0, storage_connection_string.size());
@@ -64,6 +65,7 @@ Device::Device()
 	settings["StorageConnectionString"] = "";
 	settings["StorageAccount"] = "";
 	settings["storageContainer"] = "";
+	std::cout << "DELETED SECRETS" << "\n";
 }
 
 Device::~Device()
@@ -136,13 +138,15 @@ bool Device::UpdateSettings(std::string msgbody)
 }
 
 // DeviceId is part of the connection string
-std::string Device::getDeviceId(std::string connectionString)
+std::string Device::getDeviceId(const std::string& connectionString)
 {
 	std::string connStr = connectionString;
 	std::string searchPattern = "DeviceId=";
 	std::size_t pos_begin = connStr.find(searchPattern) + searchPattern.length();
 	std::size_t pos_end = connStr.find(";", pos_begin+1);
-	return connStr.substr(pos_begin, pos_end - pos_begin);
+	std::string id = connStr.substr(pos_begin, pos_end - pos_begin);
+	memset((void*)connStr.data(), 0, connStr.size());
+	return id;
 }
 
 void Device::StartCamera()

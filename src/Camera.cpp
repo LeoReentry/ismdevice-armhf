@@ -1,7 +1,7 @@
 #include "Camera.h"
 #include <iostream>
 
-Camera::Camera(utility::string_t stoconnstr, utility::string_t containername, std::string storageaccname) : containerName{containername}, storageAccountName{storageaccname}
+Camera::Camera(const std::string &stoconnstr, utility::string_t containername, std::string storageaccname) : containerName{containername}, storageAccountName{storageaccname}
 {
 	InitBlobStorage(stoconnstr);
 
@@ -76,7 +76,7 @@ void Camera::UploadCaptureToBlobStorage(std::string filename)
 
 
 
-void Camera::InitBlobStorage(utility::string_t storageConnectionString)
+void Camera::InitBlobStorage(const std::string &storageConnectionString)
 {
 	try
 	{
